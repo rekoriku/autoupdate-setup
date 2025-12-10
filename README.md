@@ -1,3 +1,22 @@
+## Quick start: run autoupdate.sh safely (Linux/WSL)
+1) Place the script on a Linux-owned path (avoid /mnt/c):  
+   ```bash
+   sudo cp /mnt/c/tools/TEST/autoupdate.sh /usr/local/sbin/autoupdate.sh
+   sudo chown root:root /usr/local/sbin/autoupdate.sh
+   sudo chmod 755 /usr/local/sbin/autoupdate.sh   # no group/other write
+   ```
+2) Run it:  
+   ```bash
+   sudo /usr/local/sbin/autoupdate.sh
+   ```
+3) Verify success:  
+   - Logs: `sudo tail -n 50 /var/log/unattended-upgrades/setup.log`  
+   - Dry-run log: `/var/log/unattended-upgrades/dryrun.log`  
+   - Configs: `/etc/apt/apt.conf.d/50unattended-upgrades`, `/etc/apt/apt.conf.d/20auto-upgrades`  
+   - Sudoers (if NOPASSWD enabled): `sudo visudo -cf /etc/sudoers.d/autoupdate`  
+   - Recent installs: `grep -hE "upgrade |install " /var/log/dpkg.log* | tail -n 20`  
+   - Service/timers: `systemctl status unattended-upgrades` and `systemctl list-timers '*apt*'`
+
 ## How to push from WSL to GitHub with `gh`
 
 Use this flow to publish from WSL without exposing personal data (replace placeholder values as needed):
@@ -23,23 +42,6 @@ After this, future changes can be pushed with the usual `git add ...`, `git comm
 
 ### Helper script
 You can automate the above with `scripts/gh_push_template.sh`. Fill or export the placeholders (`PROJECT_DIR`, `REPO_NAME`, `GIT_USER_NAME`, `GIT_USER_EMAIL`) and run it from WSL.
-
-### Quick start: run autoupdate.sh safely
-1) Place the script on a Linux-owned path (avoid /mnt/c). Example:
-   ```bash
-   sudo cp /mnt/c/tools/TEST/autoupdate.sh /usr/local/sbin/autoupdate.sh
-   sudo chown root:root /usr/local/sbin/autoupdate.sh
-   sudo chmod 755 /usr/local/sbin/autoupdate.sh   # no group/other write
-   ```
-2) Run it:
-   ```bash
-   sudo /usr/local/sbin/autoupdate.sh
-   ```
-3) Verify success:
-   - Logs: `sudo tail -n 50 /var/log/unattended-upgrades/setup.log`
-   - Dry-run log: `/var/log/unattended-upgrades/dryrun.log`
-   - Configs: `/etc/apt/apt.conf.d/50unattended-upgrades` and `/etc/apt/apt.conf.d/20auto-upgrades`
-   - If NOPASSWD enabled: `sudo visudo -cf /etc/sudoers.d/autoupdate`
 
 ### Same commands invoked from Windows shell via WSL
 If you run these from PowerShell/CMD and want WSL to execute them in the project root (adjust the path as needed):
