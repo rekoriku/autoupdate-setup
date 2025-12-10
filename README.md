@@ -21,3 +21,17 @@ Use this flow to publish from WSL without exposing personal data (replace placeh
 
 After this, future changes can be pushed with the usual `git add ...`, `git commit ...`, `git push`.
 
+### Same commands invoked from Windows shell via WSL
+If you run these from PowerShell/CMD and want WSL to execute them in the project root (adjust the path as needed):
+
+```
+wsl --cd /mnt/c/tools/TEST sudo apt-get update && sudo apt-get install -y gh
+wsl --cd /mnt/c/tools/TEST env BROWSER='cmd.exe /C start' gh auth login -w --hostname github.com --git-protocol https
+wsl --cd /mnt/c/tools/TEST git init
+wsl --cd /mnt/c/tools/TEST git config user.name "YourName"
+wsl --cd /mnt/c/tools/TEST git config user.email "you@example.com"
+wsl --cd /mnt/c/tools/TEST git add autoupdate.sh tests/test_autoupdate.py OHJE.md
+wsl --cd /mnt/c/tools/TEST git commit -m "Add autoupdate script, doc, and tests"
+wsl --cd /mnt/c/tools/TEST gh repo create autoupdate-setup --public --source . --remote origin --push
+```
+
