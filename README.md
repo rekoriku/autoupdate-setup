@@ -16,6 +16,11 @@
    - Sudoers (if NOPASSWD enabled): `sudo visudo -cf /etc/sudoers.d/autoupdate`  
    - Recent installs: `grep -hE "upgrade |install " /var/log/dpkg.log* | tail -n 20`  
    - Service/timers: `systemctl status unattended-upgrades` and `systemctl list-timers '*apt*'`
+4) Optional test run:  
+   - Manual dry-run: `sudo unattended-upgrade --dry-run --debug | head -n 50`  
+   - Check logs after the script:  
+     `sudo tail -n 50 /var/log/unattended-upgrades/setup.log`  
+     `sudo tail -n 50 /var/log/unattended-upgrades/dryrun.log`  
 4) Check timers in local time:  
    - `systemctl list-timers --all --no-pager` (NEXT column is local time)  
    - `systemctl list-timers '*apt*'` (APT-related timers)  
