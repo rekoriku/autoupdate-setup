@@ -21,6 +21,9 @@ Use this flow to publish from WSL without exposing personal data (replace placeh
 
 After this, future changes can be pushed with the usual `git add ...`, `git commit ...`, `git push`.
 
+### Helper script
+You can automate the above with `scripts/gh_push_template.sh`. Fill or export the placeholders (`PROJECT_DIR`, `REPO_NAME`, `GIT_USER_NAME`, `GIT_USER_EMAIL`) and run it from WSL.
+
 ### Same commands invoked from Windows shell via WSL
 If you run these from PowerShell/CMD and want WSL to execute them in the project root (adjust the path as needed):
 
