@@ -16,6 +16,22 @@
    - Sudoers (if NOPASSWD enabled): `sudo visudo -cf /etc/sudoers.d/autoupdate`  
    - Recent installs: `grep -hE "upgrade |install " /var/log/dpkg.log* | tail -n 20`  
    - Service/timers: `systemctl status unattended-upgrades` and `systemctl list-timers '*apt*'`
+4) Check timers in local time:  
+   - `systemctl list-timers --all --no-pager` (NEXT column is local time)  
+   - `systemctl list-timers '*apt*'` (APT-related timers)  
+   - `timedatectl` (shows local TZ)  
+   - For a specific TZ: `TZ=Europe/Helsinki systemctl list-timers --all --no-pager`
+5) Adjust the unattended upgrade time:  
+   - Automatic reboot time (already set by the script): edit `REBOOT_TIME` and rerun the script, or edit `/etc/apt/apt.conf.d/50unattended-upgrades` `Unattended-Upgrade::Automatic-Reboot-Time "HH:MM";`  
+   - To change the apt upgrade timer itself, create a systemd override:  
+     ```bash
+     sudo systemctl edit apt-daily-upgrade.timer
+     # Add under [Timer], e.g.:
+     # OnCalendar=*-*-* 03:30
+     # RandomizedDelaySec=30m
+     sudo systemctl daemon-reload
+     sudo systemctl restart apt-daily-upgrade.timer
+     ```
 
 ## How to push from WSL to GitHub with `gh`
 
