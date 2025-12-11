@@ -29,15 +29,24 @@ Skripti kirjoittaa pysyvän lokin polkuun `${LOG_DIR}/setup.log` ja dry-run-loki
 
 ## 🚀 Käyttö
 
-Tallenna skripti nimellä esim. `autoupdate.sh` ja anna sille suoritusoikeudet.
-
-### Peruskäyttö (vain konfigurointi)
-
-Tämä asettaa automaattiset päivitykset käyttöön ilman erillisiä sudoers-sääntöjä.
-
+### Vaihtoehto A: asennusskripti (suositus)
 ```bash
-sudo ./autoupdate.sh
+sudo bash ./install.sh   # asentaa /usr/local/sbin/autoupdate.sh ja ajaa sen; ei tarvitse chmod +x
+# jos et halua ajaa heti asennuksen jälkeen:
+# sudo RUN_AFTER_INSTALL=false bash ./install.sh
 ```
+
+### Vaihtoehto B: manuaalinen asennus
+1) Kopioi skripti Linux-omisteiseen polkuun (vältä /mnt/c):
+   ```bash
+   sudo cp /mnt/c/tools/TEST/autoupdate.sh /usr/local/sbin/autoupdate.sh
+   sudo chown root:root /usr/local/sbin/autoupdate.sh
+   sudo chmod 755 /usr/local/sbin/autoupdate.sh   # ei ryhmä/muu kirjoitusoikeutta
+   ```
+2) Aja se (jos asensit manuaalisesti):
+   ```bash
+   sudo /usr/local/sbin/autoupdate.sh
+   ```
 
 ### Ympäristömuuttujat
 
@@ -50,6 +59,9 @@ sudo ./autoupdate.sh
 * `APT_CONF_DIR` – apt-konfiguraatioiden kohdehakemisto (oletus: `/etc/apt/apt.conf.d`).
 * `PATH_OVERRIDE` – korvaa PATH:in, esim. stub-komentojen testausta varten (tyhjä = normaali PATH).
 * `SKIP_ROOT_CHECK` – testikäyttöön; jos `true`, ohittaa root-tarkistuksen (älä käytä tuotannossa).
+* `SKIP_WAIT_ONLINE` – jos `true` (oletus), poistaa systemd-networkd-wait-online esikäytön apt-timereilta, välttäen ajojen kaatumisen verkon odotukseen.
+* `ALLOWED_EXTRA_ORIGINS` – ylimääräiset Allowed-Origins-merkinnät (yksi per rivi, muoto `origin:suite`), oletuksena Abitti-repot.
+* `ALLOWED_EXTRA_PATTERNS` – Origins-Pattern-merkinnät (esim. `site=linux.abitti.fi`) repoille, joissa Origin/Archive puuttuu.
 # README: Automaattiset Päivitykset (Unattended-Upgrades)
 
 ## 🇫🇮 Yleiskatsaus
