@@ -27,12 +27,6 @@ PATH_OVERRIDE="${PATH_OVERRIDE:-}"
 SKIP_ROOT_CHECK="${SKIP_ROOT_CHECK:-false}"
 # Extra Allowed-Origins for unattended-upgrades (one per line); default includes Naksu/Digabi repos
 ALLOWED_EXTRA_ORIGINS="${ALLOWED_EXTRA_ORIGINS:-$'linux.abitti.fi:ytl-linux\nlinux.abitti.fi:ytl-linux-digabi2-examnet'}"
-# Allow tests or alternative environments to override apt configuration directory
-APT_CONF_DIR="${APT_CONF_DIR:-/etc/apt/apt.conf.d}"
-# Optional: override PATH (used in tests to point at stub commands)
-PATH_OVERRIDE="${PATH_OVERRIDE:-}"
-# Optional: skip root check (test-only)
-SKIP_ROOT_CHECK="${SKIP_ROOT_CHECK:-false}"
 
 # Environment Setup
 export DEBIAN_FRONTEND='noninteractive'
@@ -252,17 +246,23 @@ configure_sudoers() {
 }
 
 configure_unattended() {
-    local tmp_50 tmp_20 extra_origins_lines=""
+    local tmp_50 tmp_20 extra_origins_lines="" origins_raw=""
     
     tmp_50="$(mktemp_tracked)"
     log "Configuring ${APT_CONF_DIR}/50unattended-upgrades..."
 
     # Build extra origins block for non-default repos (e.g., linux.abitti.fi:ytl-linux)
+    # Accept both newline- and space-separated entries; strip empty lines.
     if [[ -n "${ALLOWED_EXTRA_ORIGINS:-}" ]]; then
+        origins_raw="$(printf '%s\n' "${ALLOWED_EXTRA_ORIGINS}" | tr ' ' '\n' | sed '/^[[:space:]]*$/d')"
         while IFS= read -r origin; do
             [[ -z "$origin" ]] && continue
             extra_origins_lines+="    \"${origin}\";\n"
-        done <<< "${ALLOWED_EXTRA_ORIGINS}"
+        done <<< "${origins_raw}"
+        log "Adding extra Allowed-Origins entries:"
+        printf '%b' "$extra_origins_lines" | while IFS= read -r l; do
+            [[ -n "$l" ]] && log "  $l"
+        done
     fi
 
     cat > "$tmp_50" <<-EOF
