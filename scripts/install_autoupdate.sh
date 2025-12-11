@@ -22,12 +22,11 @@ main() {
         err "Run as root (sudo)."
     fi
 
-    local script_dir repo_root
+    local script_dir
     script_dir="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-    repo_root="$(cd -- "${script_dir}/.." && pwd -P)"
 
     local src dst run_after
-    src="${SOURCE:-${repo_root}/autoupdate.sh}"
+    src="${SOURCE:-${script_dir}/../autoupdate.sh}"
     dst="${DEST:-/usr/local/sbin/autoupdate.sh}"
     run_after="${RUN_AFTER_INSTALL:-true}"
 
