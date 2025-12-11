@@ -89,6 +89,11 @@ wsl --cd /mnt/c/tools/TEST gh repo create autoupdate-setup --public --source . -
   - `apt-cache policy ytl-linux-digabi2`
 - Ensure the repo origin/suite is allowed in `50unattended-upgrades` (match `o=` and `n=` from `apt-cache policy`, e.g. `linux.abitti.fi:ytl-linux`):
   - `grep -A4 Allowed-Origins /etc/apt/apt.conf.d/50unattended-upgrades`
+  - If missing, rerun the script or set `ALLOWED_EXTRA_ORIGINS` (default includes `linux.abitti.fi:ytl-linux` and `linux.abitti.fi:ytl-linux-digabi2-examnet`). To force-update:
+    ```bash
+    ALLOWED_EXTRA_ORIGINS=$'linux.abitti.fi:ytl-linux\nlinux.abitti.fi:ytl-linux-digabi2-examnet' \
+    sudo /usr/local/sbin/autoupdate.sh
+    ```
 - Make sure it isn’t blacklisted or held/pinned:
   - `grep -A4 Package-Blacklist /etc/apt/apt.conf.d/50unattended-upgrades`
   - `apt-mark showhold | grep -E 'naksu2|ytl-linux-digabi2'`
