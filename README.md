@@ -19,7 +19,8 @@
    - Check `ytl-linux-digabi2`:  
      - Version: `apt-cache policy ytl-linux-digabi2` and `dpkg -s ytl-linux-digabi2 | grep -E '^(Package|Version)'`  
      - Recent actions: `grep -h "ytl-linux-digabi2" /var/log/dpkg.log* | tail -n 5`  
-     - If candidate > installed (from `apt-cache policy`), an update is pending.
+     - If candidate > installed (from `apt-cache policy`), an update is pending.  
+     - If candidate is missing or stuck at an old version (e.g., 0.1.x), add/enable the Digabi/Naksu APT repo per Naksu docs (check `/etc/apt/sources.list.d/`), then `sudo apt-get update` and recheck `apt-cache policy ytl-linux-digabi2`.
 4) Optional test run:  
    - Manual dry-run: `sudo unattended-upgrade --dry-run --debug | head -n 50`  
    - Check logs after the script:  
