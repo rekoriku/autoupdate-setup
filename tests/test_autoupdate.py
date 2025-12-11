@@ -177,3 +177,94 @@ def test_autoupdate_runs_with_stubs(tmp_path: Path) -> None:
     assert "apt-get install -y unattended-upgrades apt-listchanges" in calls
     assert "unattended-upgrade --dry-run --debug" in calls
 
+
+def test_allowed_origins_sanitized(tmp_path: Path) -> None:
+    stub_dir = tmp_path / "stubs"
+    stub_dir.mkdir()
+    calls_log = tmp_path / "calls.log"
+    calls_log.touch()
+
+    _make_stubs(stub_dir, calls_log)
+
+    script_copy_dir = tmp_path / "path with space"
+    script_copy_dir.mkdir()
+    script_path = script_copy_dir / "autoupdate.sh"
+    shutil.copy(SCRIPT_SRC, script_path)
+    script_path.chmod(0o755)
+
+    apt_conf_dir = tmp_path / "aptconf"
+    apt_conf_dir.mkdir()
+
+    sudoers_path = tmp_path / "sudoers" / "autoupdate"
+    sudoers_path.parent.mkdir(parents=True)
+
+    env = os.environ.copy()
+    env.update(
+        {
+            "PATH_OVERRIDE": f"{stub_dir}{os.pathsep}/usr/sbin:/usr/bin:/sbin:/bin",
+            "SKIP_ROOT_CHECK": "true",
+            "LOG_DIR": str(tmp_path / "logs"),
+            "APT_CONF_DIR": str(apt_conf_dir),
+            "SUDOERS_TARGET": str(sudoers_path),
+            "TARGET_USER": "tester",
+            "ENABLE_NOPASSWD": "true",
+            "EXTRA_PACKAGES": "pkg1 pkg2",
+            # Inject an invalid origin (no colon) plus valid ones; invalid must be skipped.
+            "ALLOWED_EXTRA_ORIGINS": "linux.abitti.fi:ytl-linux invalid_entry linux.abitti.fi:ytl-linux-digabi2-examnet",
+            "ALLOWED_EXTRA_PATTERNS": "site=linux.abitti.fi",
+        }
+    )
+
+    result = subprocess.run(
+        ["bash", str(script_path)],
+        cwd=tmp_path,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout
+
+    conf50 = apt_conf_dir / "50unattended-upgrades"
+    content = conf50.read_text().splitlines()
+
+    # Collect Allowed-Origins entries
+    allowed = []
+    in_allowed = False
+    for line in content:
+        if "Allowed-Origins" in line:
+            in_allowed = True
+            continue
+        if in_allowed and "};" in line:
+            in_allowed = False
+            continue
+        if in_allowed:
+            line = line.strip().strip('";')
+            if line:
+                allowed.append(line)
+
+    assert "linux.abitti.fi:ytl-linux" in allowed
+    assert "linux.abitti.fi:ytl-linux-digabi2-examnet" in allowed
+    assert "invalid_entry" not in allowed
+    # Ensure every allowed entry has a colon
+    assert all(":" in a for a in allowed)
+
+    # Collect Origins-Pattern entries
+    patterns = []
+    in_pat = False
+    for line in content:
+        if "Origins-Pattern" in line:
+            in_pat = True
+            continue
+        if in_pat and "};" in line:
+            in_pat = False
+            continue
+        if in_pat:
+            line = line.strip().strip('";')
+            if line:
+                patterns.append(line)
+
+    assert "site=linux.abitti.fi" in patterns
+

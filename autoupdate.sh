@@ -253,19 +253,25 @@ configure_unattended() {
     tmp_50="$(mktemp_tracked)"
     log "Configuring ${APT_CONF_DIR}/50unattended-upgrades..."
 
-    # Build extra origins block for non-default repos (e.g., linux.abitti.fi:ytl-linux)
-    # Accept both newline- and space-separated entries; strip empty lines.
-    if [[ -n "${ALLOWED_EXTRA_ORIGINS:-}" ]]; then
-        origins_raw="$(printf '%s\n' "${ALLOWED_EXTRA_ORIGINS}" | tr ' ' '\n' | sed '/^[[:space:]]*$/d')"
-        while IFS= read -r origin; do
-            [[ -z "$origin" ]] && continue
-            extra_origins_lines+="    \"${origin}\";\n"
-        done <<< "${origins_raw}"
+# Build extra origins block for non-default repos (e.g., linux.abitti.fi:ytl-linux)
+# Accept both newline- and space-separated entries; strip empty lines and skip invalid lines.
+if [[ -n "${ALLOWED_EXTRA_ORIGINS:-}" ]]; then
+    origins_raw="$(printf '%s\n' "${ALLOWED_EXTRA_ORIGINS}" | tr ' ' '\n' | sed '/^[[:space:]]*$/d')"
+    while IFS= read -r origin; do
+        [[ -z "$origin" ]] && continue
+        if [[ "$origin" != *:* ]]; then
+            log "Skipping invalid Allowed-Origins entry (missing colon): $origin"
+            continue
+        fi
+        extra_origins_lines+="    \"${origin}\";\n"
+    done <<< "${origins_raw}"
+    if [[ -n "$extra_origins_lines" ]]; then
         log "Adding extra Allowed-Origins entries:"
         printf '%b' "$extra_origins_lines" | while IFS= read -r l; do
             [[ -n "$l" ]] && log "  $l"
         done
     fi
+fi
 
     # Build extra Origins-Pattern block (site-based or other patterns)
     if [[ -n "${ALLOWED_EXTRA_PATTERNS:-}" ]]; then
