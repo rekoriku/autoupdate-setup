@@ -1,5 +1,5 @@
 ## Quick start: run autoupdate.sh safely (Linux/WSL)
-### Option A: use the helper installer (recommended for WSL)
+### Option A: use the helper installer
 ```bash
 sudo bash ./install.sh   # installs to /usr/local/sbin and runs it; no need to chmod +x
 # to skip running immediately after install:
