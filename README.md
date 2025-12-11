@@ -83,3 +83,19 @@ wsl --cd /mnt/c/tools/TEST git commit -m "Add autoupdate script, doc, and tests"
 wsl --cd /mnt/c/tools/TEST gh repo create autoupdate-setup --public --source . --remote origin --push
 ```
 
+## Debug unattended-upgrades for naksu2 / ytl-linux-digabi2
+- Check candidate vs installed:
+  - `apt-cache policy naksu2`
+  - `apt-cache policy ytl-linux-digabi2`
+- Ensure the repo origin/suite is allowed in `50unattended-upgrades` (match `o=` and `n=` from `apt-cache policy`, e.g. `linux.abitti.fi:ytl-linux`):
+  - `grep -A4 Allowed-Origins /etc/apt/apt.conf.d/50unattended-upgrades`
+- Make sure it isn’t blacklisted or held/pinned:
+  - `grep -A4 Package-Blacklist /etc/apt/apt.conf.d/50unattended-upgrades`
+  - `apt-mark showhold | grep -E 'naksu2|ytl-linux-digabi2'`
+  - `grep -R -i -E 'naksu2|ytl-linux-digabi2' /etc/apt/preferences* /etc/apt/preferences.d/* 2>/dev/null`
+- See if unattended-upgrades touched it:
+  - `grep -h -i "naksu2" /var/log/unattended-upgrades/unattended-upgrades.log*`
+  - `grep -h -i "ytl-linux-digabi2" /var/log/unattended-upgrades/unattended-upgrades.log*`
+- Optional dry-run to confirm it would upgrade:
+  - `sudo unattended-upgrade --dry-run --debug | grep -i -E 'naksu2|ytl-linux-digabi2'`
+
