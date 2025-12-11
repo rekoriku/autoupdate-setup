@@ -1,15 +1,27 @@
 ## Quick start: run autoupdate.sh safely (Linux/WSL)
-1) Place the script on a Linux-owned path (avoid /mnt/c):  
+### Option A: use the helper installer (recommended for WSL)
+```bash
+sudo ./scripts/install_autoupdate.sh
+# to skip running immediately after install:
+# sudo RUN_AFTER_INSTALL=false ./scripts/install_autoupdate.sh
+```
+
+### Option B: manual install
+1) Quick install (recommended): run the helper (installs to /usr/local/sbin and runs it):
+   ```bash
+   sudo bash ./install.sh   # no need to chmod +x
+   ```
+2) Manual install (if you prefer): place the script on a Linux-owned path (avoid /mnt/c):
    ```bash
    sudo cp /mnt/c/tools/TEST/autoupdate.sh /usr/local/sbin/autoupdate.sh
    sudo chown root:root /usr/local/sbin/autoupdate.sh
    sudo chmod 755 /usr/local/sbin/autoupdate.sh   # no group/other write
    ```
-2) Run it:  
+3) Run it (if you installed manually):
    ```bash
    sudo /usr/local/sbin/autoupdate.sh
    ```
-3) Verify success:  
+4) Verify success:  
    - Logs: `sudo tail -n 50 /var/log/unattended-upgrades/setup.log`  
    - Dry-run log: `/var/log/unattended-upgrades/dryrun.log`  
    - Configs: `/etc/apt/apt.conf.d/50unattended-upgrades`, `/etc/apt/apt.conf.d/20auto-upgrades`  
@@ -89,6 +101,9 @@
   - `grep -h -i "ytl-linux-digabi2" /var/log/unattended-upgrades/unattended-upgrades.log*`
 - Optional dry-run to confirm it would upgrade:
   - `sudo unattended-upgrade --dry-run --debug | grep -i -E 'naksu2|ytl-linux-digabi2'`
+- Check apt timers for blockers (network wait, etc.):
+  - `journalctl -u apt-daily-upgrade --since "2 days ago"`
+  - Look for `systemd-networkd-wait-online` timeouts or other pre-flight failures.
 
 ## How to push from WSL to GitHub with `gh`
 
