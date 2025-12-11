@@ -27,6 +27,8 @@ PATH_OVERRIDE="${PATH_OVERRIDE:-}"
 SKIP_ROOT_CHECK="${SKIP_ROOT_CHECK:-false}"
 # Extra Allowed-Origins for unattended-upgrades (one per line); default includes Naksu/Digabi repos
 ALLOWED_EXTRA_ORIGINS="${ALLOWED_EXTRA_ORIGINS:-$'linux.abitti.fi:ytl-linux\nlinux.abitti.fi:ytl-linux-digabi2-examnet'}"
+# Extra Allowed-Origins using site= (helps when Origin/Archive fields are empty in Release metadata)
+ALLOWED_EXTRA_SITES="${ALLOWED_EXTRA_SITES:-site=linux.abitti.fi}"
 
 # Environment Setup
 export DEBIAN_FRONTEND='noninteractive'
@@ -246,7 +248,7 @@ configure_sudoers() {
 }
 
 configure_unattended() {
-    local tmp_50 tmp_20 extra_origins_lines="" origins_raw=""
+    local tmp_50 tmp_20 extra_origins_lines="" origins_raw="" extra_sites_lines="" sites_raw=""
     
     tmp_50="$(mktemp_tracked)"
     log "Configuring ${APT_CONF_DIR}/50unattended-upgrades..."
@@ -265,12 +267,28 @@ configure_unattended() {
         done
     fi
 
+    # Build extra site-based origins block (handles repos with empty Origin/Archive fields)
+    if [[ -n "${ALLOWED_EXTRA_SITES:-}" ]]; then
+        sites_raw="$(printf '%s\n' "${ALLOWED_EXTRA_SITES}" | tr ' ' '\n' | sed '/^[[:space:]]*$/d')"
+        while IFS= read -r site_entry; do
+            [[ -z "$site_entry" ]] && continue
+            extra_sites_lines+="    \"${site_entry}\";\n"
+        done <<< "${sites_raw}"
+        if [[ -n "$extra_sites_lines" ]]; then
+            log "Adding extra site-based Allowed-Origins entries:"
+            printf '%b' "$extra_sites_lines" | while IFS= read -r l; do
+                [[ -n "$l" ]] && log "  $l"
+            done
+        fi
+    fi
+
     cat > "$tmp_50" <<-EOF
 Unattended-Upgrade::Allowed-Origins {
     "${DISTRO_ORIGIN}:${DISTRO_CODENAME}";
     "${DISTRO_ORIGIN}:${DISTRO_CODENAME}-security";
     "${DISTRO_ORIGIN}:${DISTRO_CODENAME}-updates";
 $(printf '%b' "$extra_origins_lines")
+$(printf '%b' "$extra_sites_lines")
 };
 Unattended-Upgrade::Package-Blacklist {};
 Unattended-Upgrade::Remove-Unused-Dependencies "true";

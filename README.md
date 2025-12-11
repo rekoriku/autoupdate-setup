@@ -83,6 +83,32 @@ wsl --cd /mnt/c/tools/TEST git commit -m "Add autoupdate script, doc, and tests"
 wsl --cd /mnt/c/tools/TEST gh repo create autoupdate-setup --public --source . --remote origin --push
 ```
 
+## Verify extra origins were applied
+- After running the script, check Allowed-Origins contains abitti/examnet:
+  ```bash
+  grep -A6 Allowed-Origins /etc/apt/apt.conf.d/50unattended-upgrades
+  ```
+  You should see lines like:
+  ```
+      "linux.abitti.fi:ytl-linux";
+      "linux.abitti.fi:ytl-linux-digabi2-examnet";
+  ```
+- If missing, force-set and rerun:
+  ```bash
+  ALLOWED_EXTRA_ORIGINS=$'linux.abitti.fi:ytl-linux\nlinux.abitti.fi:ytl-linux-digabi2-examnet' \
+  sudo /usr/local/sbin/autoupdate.sh
+  ```
+- If the repo Release has empty Origin/Archive, also allow by site:
+  ```bash
+  ALLOWED_EXTRA_SITES='site=linux.abitti.fi' \
+  sudo /usr/local/sbin/autoupdate.sh
+  grep -A6 Allowed-Origins /etc/apt/apt.conf.d/50unattended-upgrades
+  ```
+- Check the script log for the “Adding extra Allowed-Origins entries” message:
+  ```bash
+  sudo grep -i "Allowed-Origins" /var/log/unattended-upgrades/setup.log
+  ```
+
 ## Debug unattended-upgrades for naksu2 / ytl-linux-digabi2
 - Check candidate vs installed:
   - `apt-cache policy naksu2`
