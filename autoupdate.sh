@@ -25,8 +25,8 @@ APT_CONF_DIR="${APT_CONF_DIR:-/etc/apt/apt.conf.d}"
 PATH_OVERRIDE="${PATH_OVERRIDE:-}"
 # Optional: skip root check (test-only)
 SKIP_ROOT_CHECK="${SKIP_ROOT_CHECK:-false}"
-# Extra Allowed-Origins for unattended-upgrades (one per line); default includes Naksu/Digabi repo
-ALLOWED_EXTRA_ORIGINS="${ALLOWED_EXTRA_ORIGINS:-linux.abitti.fi:ytl-linux}"
+# Extra Allowed-Origins for unattended-upgrades (one per line); default includes Naksu/Digabi repos
+ALLOWED_EXTRA_ORIGINS="${ALLOWED_EXTRA_ORIGINS:-$'linux.abitti.fi:ytl-linux\nlinux.abitti.fi:ytl-linux-digabi2-examnet'}"
 # Allow tests or alternative environments to override apt configuration directory
 APT_CONF_DIR="${APT_CONF_DIR:-/etc/apt/apt.conf.d}"
 # Optional: override PATH (used in tests to point at stub commands)
