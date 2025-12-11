@@ -25,6 +25,14 @@ APT_CONF_DIR="${APT_CONF_DIR:-/etc/apt/apt.conf.d}"
 PATH_OVERRIDE="${PATH_OVERRIDE:-}"
 # Optional: skip root check (test-only)
 SKIP_ROOT_CHECK="${SKIP_ROOT_CHECK:-false}"
+# Extra Allowed-Origins for unattended-upgrades (one per line); default includes Naksu/Digabi repo
+ALLOWED_EXTRA_ORIGINS="${ALLOWED_EXTRA_ORIGINS:-linux.abitti.fi:ytl-linux}"
+# Allow tests or alternative environments to override apt configuration directory
+APT_CONF_DIR="${APT_CONF_DIR:-/etc/apt/apt.conf.d}"
+# Optional: override PATH (used in tests to point at stub commands)
+PATH_OVERRIDE="${PATH_OVERRIDE:-}"
+# Optional: skip root check (test-only)
+SKIP_ROOT_CHECK="${SKIP_ROOT_CHECK:-false}"
 
 # Environment Setup
 export DEBIAN_FRONTEND='noninteractive'
@@ -244,16 +252,25 @@ configure_sudoers() {
 }
 
 configure_unattended() {
-    local tmp_50 tmp_20
+    local tmp_50 tmp_20 extra_origins_lines=""
     
     tmp_50="$(mktemp_tracked)"
     log "Configuring ${APT_CONF_DIR}/50unattended-upgrades..."
-    
+
+    # Build extra origins block for non-default repos (e.g., linux.abitti.fi:ytl-linux)
+    if [[ -n "${ALLOWED_EXTRA_ORIGINS:-}" ]]; then
+        while IFS= read -r origin; do
+            [[ -z "$origin" ]] && continue
+            extra_origins_lines+="    \"${origin}\";\n"
+        done <<< "${ALLOWED_EXTRA_ORIGINS}"
+    fi
+
     cat > "$tmp_50" <<-EOF
 Unattended-Upgrade::Allowed-Origins {
     "${DISTRO_ORIGIN}:${DISTRO_CODENAME}";
     "${DISTRO_ORIGIN}:${DISTRO_CODENAME}-security";
     "${DISTRO_ORIGIN}:${DISTRO_CODENAME}-updates";
+$(printf '%b' "$extra_origins_lines")
 };
 Unattended-Upgrade::Package-Blacklist {};
 Unattended-Upgrade::Remove-Unused-Dependencies "true";
