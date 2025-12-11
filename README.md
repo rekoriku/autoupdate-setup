@@ -16,6 +16,10 @@
    - Sudoers (if NOPASSWD enabled): `sudo visudo -cf /etc/sudoers.d/autoupdate`  
    - Recent installs: `grep -hE "upgrade |install " /var/log/dpkg.log* | tail -n 20`  
    - Service/timers: `systemctl status unattended-upgrades` and `systemctl list-timers '*apt*'`
+   - Check `ytl-linux-digabi2`:  
+     - Version: `apt-cache policy ytl-linux-digabi2` and `dpkg -s ytl-linux-digabi2 | grep -E '^(Package|Version)'`  
+     - Recent actions: `grep -h "ytl-linux-digabi2" /var/log/dpkg.log* | tail -n 5`  
+     - If candidate > installed (from `apt-cache policy`), an update is pending.
 4) Optional test run:  
    - Manual dry-run: `sudo unattended-upgrade --dry-run --debug | head -n 50`  
    - Check logs after the script:  
