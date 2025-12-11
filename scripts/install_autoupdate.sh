@@ -47,8 +47,11 @@ main() {
     log "Done."
 
     if [[ "${run_after,,}" == "true" || "${run_after,,}" == "yes" || "${run_after}" == "1" ]]; then
-        log "Running $dst ..."
-        "$dst"
+        log "Running $dst from its directory..."
+        (
+            cd -- "$(dirname "$dst")" || err "Failed to cd into $(dirname "$dst")"
+            "./$(basename "$dst")"
+        )
     else
         log "Skipping run (RUN_AFTER_INSTALL=${run_after})."
     fi
