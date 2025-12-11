@@ -25,6 +25,8 @@ APT_CONF_DIR="${APT_CONF_DIR:-/etc/apt/apt.conf.d}"
 PATH_OVERRIDE="${PATH_OVERRIDE:-}"
 # Optional: skip root check (test-only)
 SKIP_ROOT_CHECK="${SKIP_ROOT_CHECK:-false}"
+# Optional: skip systemd-networkd-wait-online in apt timers (avoids failures when masked or slow network)
+SKIP_WAIT_ONLINE="${SKIP_WAIT_ONLINE:-true}"
 # Extra Allowed-Origins for unattended-upgrades (one per line); default includes Naksu/Digabi repos
 ALLOWED_EXTRA_ORIGINS="${ALLOWED_EXTRA_ORIGINS:-$'linux.abitti.fi:ytl-linux\nlinux.abitti.fi:ytl-linux-digabi2-examnet'}"
 # Extra Origins-Pattern entries (newline/space separated) for repos with empty Origin/Archive (site-based)
@@ -345,6 +347,42 @@ install_extra_packages() {
     done
 }
 
+configure_systemd_overrides() {
+    if ! is_true "$SKIP_WAIT_ONLINE"; then
+        log "SKIP_WAIT_ONLINE=false; leaving apt timers ExecStartPre intact."
+        return
+    fi
+
+    log "Disabling systemd-networkd-wait-online for apt timers to avoid connectivity timeout failures."
+
+    local dropin_upgrade dropin_daily tmp_override
+    dropin_upgrade="/etc/systemd/system/apt-daily-upgrade.service.d"
+    dropin_daily="/etc/systemd/system/apt-daily.service.d"
+
+    mkdir -p "$dropin_upgrade" "$dropin_daily"
+
+    tmp_override="$(mktemp_tracked)"
+    cat > "$tmp_override" <<-'EOF'
+[Service]
+ExecStartPre=
+ExecStartPre=/bin/true
+EOF
+    write_if_changed "$tmp_override" "${dropin_upgrade}/override.conf" 644
+
+    tmp_override="$(mktemp_tracked)"
+    cat > "$tmp_override" <<-'EOF'
+[Service]
+ExecStartPre=
+ExecStartPre=/bin/true
+EOF
+    write_if_changed "$tmp_override" "${dropin_daily}/override.conf" 644
+
+    # Reload systemd to pick up drop-ins; restart timers to apply
+    systemctl daemon-reload || log "WARNING: systemctl daemon-reload failed"
+    systemctl restart apt-daily.timer || log "WARNING: failed to restart apt-daily.timer"
+    systemctl restart apt-daily-upgrade.timer || log "WARNING: failed to restart apt-daily-upgrade.timer"
+}
+
 # --- Main Execution ---
 
 main() {
@@ -379,6 +417,7 @@ main() {
 
     configure_unattended
     install_extra_packages
+    configure_systemd_overrides
 
     # Verification Step
     log "Running unattended-upgrade dry-run for verification..."
