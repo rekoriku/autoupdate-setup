@@ -18,7 +18,7 @@ LOG_DIR="${LOG_DIR:-/var/log/unattended-upgrades}"
 SETUP_LOG_FILE="${LOG_DIR}/setup.log"
 SUDOERS_TARGET="${SUDOERS_TARGET:-/etc/sudoers.d/autoupdate}"
 # AUTO_REBOOT: set to true/1/yes to enable automatic reboot after unattended upgrades; set to false/0/no to disable
-AUTO_REBOOT="${AUTO_REBOOT:-true}"
+AUTO_REBOOT="${AUTO_REBOOT:-false}"
 REBOOT_TIME="${REBOOT_TIME:-03:30}"
 EXTRA_PACKAGES="${EXTRA_PACKAGES:-ytl-linux-digabi2}"
 # Allow tests or alternative environments to override apt configuration directory
