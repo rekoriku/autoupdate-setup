@@ -17,6 +17,8 @@ set -euo pipefail
 LOG_DIR="${LOG_DIR:-/var/log/unattended-upgrades}"
 SETUP_LOG_FILE="${LOG_DIR}/setup.log"
 SUDOERS_TARGET="${SUDOERS_TARGET:-/etc/sudoers.d/autoupdate}"
+# AUTO_REBOOT: set to true/1/yes to enable automatic reboot after unattended upgrades; set to false/0/no to disable
+AUTO_REBOOT="${AUTO_REBOOT:-true}"
 REBOOT_TIME="${REBOOT_TIME:-03:30}"
 EXTRA_PACKAGES="${EXTRA_PACKAGES:-ytl-linux-digabi2}"
 # Allow tests or alternative environments to override apt configuration directory
@@ -250,7 +252,11 @@ configure_sudoers() {
 }
 
 configure_unattended() {
-    local tmp_50 tmp_20 extra_origins_lines="" origins_raw="" extra_patterns_lines="" patterns_raw=""
+    local tmp_50 tmp_20 extra_origins_lines="" origins_raw="" extra_patterns_lines="" patterns_raw="" auto_reboot_setting="false"
+
+    if is_true "$AUTO_REBOOT"; then
+        auto_reboot_setting="true"
+    fi
     
     tmp_50="$(mktemp_tracked)"
     log "Configuring ${APT_CONF_DIR}/50unattended-upgrades..."
@@ -302,7 +308,7 @@ $(printf '%b' "$extra_patterns_lines")
 };
 Unattended-Upgrade::Package-Blacklist {};
 Unattended-Upgrade::Remove-Unused-Dependencies "true";
-Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot "${auto_reboot_setting}";
 Unattended-Upgrade::Automatic-Reboot-Time "${REBOOT_TIME}";
 EOF
     write_if_changed "$tmp_50" "${APT_CONF_DIR}/50unattended-upgrades" 644
