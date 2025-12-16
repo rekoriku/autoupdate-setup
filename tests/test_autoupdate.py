@@ -139,7 +139,7 @@ def test_autoupdate_runs_with_stubs(tmp_path: Path) -> None:
     )
 
     result = subprocess.run(
-        ["bash", str(script_path)],
+        ["bash", script_path.as_posix()],
         cwd=tmp_path,
         env=env,
         stdout=subprocess.PIPE,
@@ -216,7 +216,7 @@ def test_allowed_origins_sanitized(tmp_path: Path) -> None:
     )
 
     result = subprocess.run(
-        ["bash", str(script_path)],
+        ["bash", script_path.as_posix()],
         cwd=tmp_path,
         env=env,
         stdout=subprocess.PIPE,

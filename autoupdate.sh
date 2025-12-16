@@ -376,6 +376,10 @@ install_extra_packages() {
 }
 
 configure_systemd_overrides() {
+    if is_true "$SKIP_ROOT_CHECK"; then
+        log "SKIP_ROOT_CHECK=true; skipping systemd overrides (test mode)."
+        return
+    fi
     if ! command -v systemctl >/dev/null 2>&1; then
         log "systemctl not found; skipping systemd overrides."
         return
