@@ -20,7 +20,9 @@ SUDOERS_TARGET="${SUDOERS_TARGET:-/etc/sudoers.d/autoupdate}"
 # AUTO_REBOOT: set to true/1/yes to enable automatic reboot after unattended upgrades; set to false/0/no to disable
 AUTO_REBOOT="${AUTO_REBOOT:-false}"
 REBOOT_TIME="${REBOOT_TIME:-03:30}"
-EXTRA_PACKAGES="${EXTRA_PACKAGES:-ytl-linux-digabi2}"
+DEFAULT_EXTRA_PACKAGES_LINUX="ytl-linux-digabi2"
+DEFAULT_EXTRA_PACKAGES_WSL="ytl-linux-digabi2-wsl"
+EXTRA_PACKAGES="${EXTRA_PACKAGES:-}"
 # Allow tests or alternative environments to override apt configuration directory
 APT_CONF_DIR="${APT_CONF_DIR:-/etc/apt/apt.conf.d}"
 # Optional: override PATH (used in tests to point at stub commands)
@@ -49,6 +51,7 @@ ENABLE_NOPASSWD="${ENABLE_NOPASSWD:-false}"
 SCRIPT_PATH=''
 DISTRO_ORIGIN=''
 DISTRO_CODENAME=''
+IS_WSL=''
 TMP_FILES=()
 
 # --- Utility Functions ---
@@ -85,6 +88,19 @@ apt_retry() {
 is_true() {
     local v="${1,,}"
     [[ "$v" == "true" || "$v" == "1" || "$v" == "yes" ]]
+}
+
+is_wsl() {
+    if [[ -n "${WSL_INTEROP:-}" || -n "${WSL_DISTRO_NAME:-}" ]]; then
+        return 0
+    fi
+    if [[ -r /proc/version ]] && grep -qi microsoft /proc/version 2>/dev/null; then
+        return 0
+    fi
+    if [[ -d /run/WSL ]]; then
+        return 0
+    fi
+    return 1
 }
 
 # Idempotent file write: checks if content has changed before overwriting
@@ -136,7 +152,7 @@ check_dependencies() {
     # Set local IFS for correct space-delimited loop iteration
     local IFS=' '
     # stat is intentionally excluded and checked separately in assert_script_safe
-    local deps="apt visudo mktemp cmp install dpkg apt-cache"
+    local deps="apt visudo mktemp cmp install dpkg apt-cache grep"
     
     for cmd in $deps; do
         [[ -n "$cmd" ]] || continue
@@ -341,8 +357,14 @@ install_extra_packages() {
             continue
         }
 
-        if ! apt-cache policy "$pkg_name" | grep -q 'Candidate:'; then
-            log "WARNING: Package '$pkg_name' not found in repositories. Installation skipped."
+        local policy
+        policy="$(apt-cache policy "$pkg_name" 2>/dev/null || true)"
+        if ! printf '%s\n' "$policy" | grep -q 'Candidate:'; then
+            log "WARNING: Unable to determine candidate version for '$pkg_name'. Installation skipped."
+            continue
+        fi
+        if printf '%s\n' "$policy" | grep -q 'Candidate: (none)'; then
+            log "WARNING: Package '$pkg_name' not found in repositories (Candidate: (none)). Installation skipped."
             continue
         fi
         
@@ -354,6 +376,14 @@ install_extra_packages() {
 }
 
 configure_systemd_overrides() {
+    if ! command -v systemctl >/dev/null 2>&1; then
+        log "systemctl not found; skipping systemd overrides."
+        return
+    fi
+    if [[ "${IS_WSL:-}" == "true" ]] && [[ ! -d /run/systemd/system ]]; then
+        log "No systemd detected under WSL; skipping systemd overrides."
+        return
+    fi
     if ! is_true "$SKIP_WAIT_ONLINE"; then
         log "SKIP_WAIT_ONLINE=false; leaving apt timers ExecStartPre intact."
         return
@@ -405,7 +435,21 @@ main() {
 
     assert_script_safe 
     detect_distro
-    
+
+    if is_wsl; then
+        IS_WSL='true'
+    else
+        IS_WSL='false'
+    fi
+
+    if [[ -z "${EXTRA_PACKAGES:-}" ]]; then
+        if [[ "$IS_WSL" == "true" ]]; then
+            EXTRA_PACKAGES="$DEFAULT_EXTRA_PACKAGES_WSL"
+        else
+            EXTRA_PACKAGES="$DEFAULT_EXTRA_PACKAGES_LINUX"
+        fi
+    fi
+     
     [[ -d "$APT_CONF_DIR" ]] || error "$APT_CONF_DIR not found."
 
     configure_sudoers

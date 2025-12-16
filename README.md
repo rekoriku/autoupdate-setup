@@ -1,4 +1,11 @@
 ## Quick start: run autoupdate.sh safely (Linux/WSL)
+
+### WSL (or any Linux): download + run (copy/paste)
+```bash
+curl -fsSLO https://raw.githubusercontent.com/rekoriku/autoupdate-setup/master/install.sh
+curl -fsSLO https://raw.githubusercontent.com/rekoriku/autoupdate-setup/master/autoupdate.sh
+sudo bash install.sh
+```
 ### Option A: use the helper installer
 ```bash
 sudo bash ./install.sh   # installs to /usr/local/sbin and runs it; no need to chmod +x
